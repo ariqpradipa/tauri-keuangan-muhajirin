@@ -14,23 +14,38 @@ import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
 import Checkbox from '@mui/material/Checkbox';
-import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Switch from '@mui/material/Switch';
-import DeleteIcon from '@mui/icons-material/Delete';
-import FilterListIcon from '@mui/icons-material/FilterList';
 import TextField from '@mui/material/TextField';
-import InfoIcon from '@mui/icons-material/Info';
 import { visuallyHidden } from '@mui/utils';
 import Backdrop from '@mui/material/Backdrop';
+import Autocomplete from '@mui/material/Autocomplete';
+import EditData from '../InsertData/editData';
 import CircularProgress from '@mui/material/CircularProgress';
 import Button from '@mui/material/Button';
+
+// icons
+import DescriptionIcon from '@mui/icons-material/Description';
+import IconButton from '@mui/material/IconButton';
+import DeleteIcon from '@mui/icons-material/Delete';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import InfoIcon from '@mui/icons-material/Info';
+import EditIcon from '@mui/icons-material/Edit';
 
 import axios from "axios";
 import { parse } from 'postcss';
 
 const Swal = require('sweetalert2')
+
+const kategori = [
+    { label: 'Semua' },
+    { label: 'Operasional' },
+    { label: 'Anak Yatim' },
+    { label: 'Baitul Mal' },
+    { label: 'Renovasi' }
+]
+
 
 export default function EnhancedTable() {
     const [order, setOrder] = React.useState('asc');
@@ -41,7 +56,10 @@ export default function EnhancedTable() {
     const [rowsPerPage, setRowsPerPage] = React.useState(5);
     const [tanggalDari, setTanggalDari] = React.useState('');
     const [tanggalSampai, setTanggalSampai] = React.useState('');
+    const [kategoriValue, setKategoriValue] = React.useState(kategori[0]);
     const [saldoAkhir, setSaldoAkhir] = React.useState('');
+    const [totalPemasukan, setTotalPemasukan] = React.useState('');
+    const [totalPengeluaran, setTotalPengeluaran] = React.useState('');
 
     const [rows, setRows] = React.useState([]);
     const [idDana, setIdDana] = React.useState([]);
@@ -50,12 +68,18 @@ export default function EnhancedTable() {
     const [hasilData, setHasilData] = React.useState(null);
 
     const [open, setOpen] = React.useState(false);
+    const [editOpen, setEditOpen] = React.useState(false);
     const handleClose = () => {
         setOpen(false);
+        setEditOpen(false);
     };
     const handleToggle = () => {
         setOpen(!open);
     };
+    const handleEdit = () => {
+        setEditOpen(!editOpen);
+    };
+
 
 
     function descendingComparator(a, b, orderBy) {
@@ -125,6 +149,12 @@ export default function EnhancedTable() {
             disablePadding: false,
             label: 'Pengeluaran',
         },
+        {
+            id: 'imgData',
+            numeric: true,
+            disablePadding: false,
+            label: 'Attachment',
+        }
     ];
     var selectedCount;
     function EnhancedTableHead(props) {
@@ -228,73 +258,90 @@ export default function EnhancedTable() {
                     Swal.fire('Data tidak jadi dihapus', '', 'info')
                 }
             })
-
-
         }
 
-
-
         return (
-            <Toolbar
-                sx={{
-                    pl: { sm: 2 },
-                    pr: { xs: 1, sm: 1 },
-                    ...(numSelected > 0 && {
-                        bgcolor: (theme) =>
-                            alpha(theme.palette.primary.main, theme.palette.action.activatedOpacity),
-                    }),
-                }}
-            >
-                {numSelected > 0 ? (
-                    <Typography
-                        sx={{ flex: '1 1 100%' }}
-                        color="inherit"
-                        variant="subtitle1"
-                        component="div"
-                    >
-                        {numSelected} selected
-                    </Typography>
-                ) : (
-                    <Typography
-                        sx={{ flex: '1 1 100%' }}
-                        variant="h6"
-                        id="tableTitle"
-                        component="div"
-                    >
-                        Data
-                    </Typography>
-                )}
+            <>
+                {editOpen ?
+                    (
+                        <Backdrop
+                            sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+                            open={editOpen}
+                        >
+                            <div className="flex flex-col items-end space-y-2">
+                                <div className="mr-[1%] pr-[2%]">
+                                    <Button color='error' variant="contained" className="m-[20%] p-[20%]" size='large' sx={{ width: 100 }} onClick={handleClose}>Cancel</Button>
+                                </div>
+                                <EditData propData={rows[selected - 1]} />
+                            </div>
+                        </Backdrop>
 
-                {numSelected > 1 ? (
-                    <Tooltip title="Delete">
-                        <IconButton onClick={() => deleteData()}>
-                            <DeleteIcon />
-                        </IconButton>
-                    </Tooltip>
+                    ) : null
+                }
 
-                ) : null}
-                {(numSelected > 0 && numSelected < 2) ? (
-                    <>
-                        <Tooltip title="Info">
-                            <IconButton onClick={handleToggle}>
-                                <InfoIcon />
-                            </IconButton>
-                        </Tooltip>
+                <Toolbar
+                    sx={{
+                        pl: { sm: 2 },
+                        pr: { xs: 1, sm: 1 },
+                        ...(numSelected > 0 && {
+                            bgcolor: (theme) =>
+                                alpha(theme.palette.primary.main, theme.palette.action.activatedOpacity),
+                        }),
+                    }}
+                >
+                    {numSelected > 0 ? (
+                        <Typography
+                            sx={{ flex: '1 1 100%' }}
+                            color="inherit"
+                            variant="subtitle1"
+                            component="div"
+                        >
+                            {numSelected} selected
+                        </Typography>
+                    ) : (
+                        <Typography
+                            sx={{ flex: '1 1 100%' }}
+                            variant="h6"
+                            id="tableTitle"
+                            component="div"
+                        >
+                            Data
+                        </Typography>
+                    )}
+
+                    {numSelected > 1 ? (
                         <Tooltip title="Delete">
                             <IconButton onClick={() => deleteData()}>
                                 <DeleteIcon />
                             </IconButton>
                         </Tooltip>
-                    </>
-                )
-                    : (
-                        <Tooltip title="Filter list">
-                            <IconButton>
-                                <FilterListIcon />
-                            </IconButton>
-                        </Tooltip>
-                    )}
-            </Toolbar>
+
+                    ) : null}
+                    {(numSelected > 0 && numSelected < 2) ? (
+                        <>
+                            <Tooltip title="Info">
+                                <IconButton onClick={handleToggle}>
+                                    <InfoIcon />
+                                </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Edit">
+                                <IconButton onClick={handleEdit}>
+                                    <EditIcon />
+                                </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Delete">
+                                <IconButton onClick={() => deleteData()}>
+                                    <DeleteIcon />
+                                </IconButton>
+                            </Tooltip>
+                        </>
+                    )
+                        : (
+                            <>
+                            </>
+                        )}
+                </Toolbar>
+            </>
         );
     };
 
@@ -335,13 +382,16 @@ export default function EnhancedTable() {
             });
     }
 
-    var rowsRaw = [];
+    let rowsRaw = [];
+    let hasImg = [];
 
     if (hasData) {
         setHasData(false);
-        var nomor = 0;
-        var saldo = 0;
-        var idss = [];
+        let nomor = 0;
+        let saldo = 0;
+        let idss = [];
+        let totPemasukan = 0;
+        let totPengeluaran = 0;
         for (let i = 0; i < hasilData.length; i++) {
 
             nomor += 1;
@@ -349,35 +399,38 @@ export default function EnhancedTable() {
 
             if (hasilData[i].referensi[0] === 'A') {
                 saldo += parseInt(hasilData[i].nominal);
+                totPemasukan += parseInt(hasilData[i].nominal);
                 rowsRaw.push({
 
                     noId: nomor,
                     tanggalId: hasilData[i].tanggal,
                     referensiId: hasilData[i].referensi,
+                    kategoriId: hasilData[i].kategori,
                     keteranganId: hasilData[i].keterangan,
-                    pemasukanId: new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(hasilData[i].nominal),
+                    pemasukanId: hasilData[i].nominal,
                     pengeluaranId: null,
                     idData: hasilData[i]._id,
                     imgData: hasilData[i].gambarBukti
 
                 });
 
-
                 idss.push(hasilData[i]._id);
 
             } else {
                 saldo -= parseInt(hasilData[i].nominal);
+                totPengeluaran += parseInt(hasilData[i].nominal)
 
                 rowsRaw.push({
 
                     noId: nomor,
                     tanggalId: hasilData[i].tanggal,
                     referensiId: hasilData[i].referensi,
+                    kategoriId: hasilData[i].kategori,
                     keteranganId: hasilData[i].keterangan,
                     pemasukanId: null,
-                    pengeluaranId: new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(hasilData[i].nominal),
+                    pengeluaranId: hasilData[i].nominal,
                     idData: hasilData[i]._id,
-                    imgData: hasilData[i].gambarBukti
+                    imgData: hasilData[i].gambarBukti,
 
                 });
 
@@ -386,8 +439,17 @@ export default function EnhancedTable() {
 
             }
 
+            if (hasilData[i].gambarBukti.data !== 404) {
+                //hasImg.push(DescriptionIcon);
+                hasImg.push("ada");
+            } else {
+                hasImg.push(null);
+            }
+
         }
 
+        setTotalPemasukan(totPemasukan);
+        setTotalPengeluaran(totPengeluaran);
         setSaldoAkhir(saldo);
         setRows(rowsRaw);
         setIdDana(idss);
@@ -469,67 +531,123 @@ export default function EnhancedTable() {
 
             const y = new Date(tanggalDari);
             const z = new Date(tanggalSampai);
-            var x;
-            var idss = [];
+            let x;
+            let idss = [];
 
 
-            var nomor = 0;
+            let nomor = 0;
+            let totPemasukan = 0;
+            let totPengeluaran = 0;
             for (let i = 0; i < hasilData.length; i++) {
 
                 nomor += 1;
                 x = new Date(hasilData[i].tanggal);
 
                 if (x >= y && x <= z) {
+                    if (hasilData[i].kategori === kategoriValue.label || kategoriValue.label === 'Semua') {
 
-                    if (hasilData[i].referensi[0] === 'A') {
+                        if (hasilData[i].referensi[0] === 'A') {
+                            totPemasukan += parseInt(hasilData[i].nominal);
+                            rowsRaw.push({
 
-                        rowsRaw.push({
+                                noId: nomor,
+                                tanggalId: hasilData[i].tanggal,
+                                referensiId: hasilData[i].referensi,
+                                keteranganId: hasilData[i].keterangan,
+                                pemasukanId: hasilData[i].nominal,
+                                pengeluaranId: null,
+                                idData: hasilData[i]._id,
+                                imgData: hasilData[i].gambarBukti
 
-                            noId: nomor,
-                            tanggalId: hasilData[i].tanggal,
-                            referensiId: hasilData[i].referensi,
-                            keteranganId: hasilData[i].keterangan,
-                            pemasukanId: new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(hasilData[i].nominal),
-                            pengeluaranId: null,
-                            idData: hasilData[i]._id,
-                            imgData: hasilData[i].gambarBukti
-
-                        });
-
-
-                        idss.push(hasilData[i]._id);
-                    } else {
+                            });
 
 
-                        rowsRaw.push({
+                            idss.push(hasilData[i]._id);
+                        } else {
 
-                            noId: nomor,
-                            tanggalId: hasilData[i].tanggal,
-                            referensiId: hasilData[i].referensi,
-                            keteranganId: hasilData[i].keterangan,
-                            pemasukanId: null,
-                            pengeluaranId: new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(hasilData[i].nominal),
-                            idData: hasilData[i]._id,
-                            imgData: hasilData[i].gambarBukti
+                            totPengeluaran += parseInt(hasilData[i].nominal);
+                            rowsRaw.push({
 
-                        });
+                                noId: nomor,
+                                tanggalId: hasilData[i].tanggal,
+                                referensiId: hasilData[i].referensi,
+                                keteranganId: hasilData[i].keterangan,
+                                pemasukanId: null,
+                                pengeluaranId: hasilData[i].nominal,
+                                idData: hasilData[i]._id,
+                                imgData: hasilData[i].gambarBukti
+
+                            });
 
 
-                        idss.push(hasilData[i]._id);
+                            idss.push(hasilData[i]._id);
 
+                        }
                     }
                 }
             }
 
+            document.getElementById('judul-laporan').style.display = 'none';
+            document.getElementById('kategori-laporan').style.display = 'none';
+            document.getElementById('tanggal-laporan').style.display = 'none';
+
+            if (tanggalDari === tanggalSampai) {
+
+                document.getElementById('judul-laporan').style.display = 'flex';
+                document.getElementById('tanggal-laporan').style.display = 'flex';
+
+                document.getElementById('judul-laporan').innerHTML = 'Laporan Keuangan Masjid Al-Muhajirin';
+                document.getElementById('tanggal-laporan').innerHTML = new Date(tanggalDari).toLocaleDateString('id-ID', { month: 'long', day: 'numeric' });
+
+                if (kategoriValue.label !== 'Semua') {
+                    document.getElementById('kategori-laporan').style.display = 'flex';
+                    document.getElementById('kategori-laporan').innerHTML = kategoriValue.label;
+                }
+
+            } else {
+
+                document.getElementById('judul-laporan').style.display = 'flex';
+                document.getElementById('judul-laporan').innerHTML = 'Laporan Keuangan Masjid Al-Muhajirin';
+
+                document.getElementById('tanggal-laporan').style.display = 'flex';
+                let tanggalTarget = new Date(tanggalSampai).toLocaleDateString('id-ID', { month: 'long', day: 'numeric' });
+                let lastMonth = new Date(tanggalDari);
+                lastMonth.setMonth(lastMonth.getMonth() + 1);
+                lastMonth.setDate(-0);
+                lastMonth = new Date(lastMonth).toLocaleDateString('id-ID', { month: 'long', day: 'numeric' });
+                if (new Date(tanggalDari).toLocaleDateString('id-ID', { day: 'numeric' }) === '1' && lastMonth === tanggalTarget) {
+
+                    document.getElementById('tanggal-laporan').innerHTML = 'Bulan '
+                        + new Date(tanggalDari).toLocaleDateString('id-ID', { month: 'long' });
+
+                } else {
+
+                    document.getElementById('tanggal-laporan').innerHTML =
+                        new Date(tanggalDari).toLocaleDateString('id-ID', { month: 'long', day: 'numeric' })
+                        + ' s/d '
+                        + new Date(tanggalSampai).toLocaleDateString('id-ID', { month: 'long', day: 'numeric' });
+
+                }
+
+                if (kategoriValue.label !== 'Semua') {
+                    document.getElementById('kategori-laporan').style.display = 'flex';
+                    document.getElementById('kategori-laporan').innerHTML = kategoriValue.label;
+                }
+            }
+
+            setTotalPemasukan(totPemasukan);
+            setTotalPengeluaran(totPengeluaran);
             setRows(rowsRaw);
             setIdDana(idss);
 
         }
     }
 
+
+
     return (
         <>
-
+            {console.log(hasImg)}
             <form onSubmit={onDateFilter}>
                 <div className="flex flex-row pb-5">
                     <div className="space-x-8">
@@ -556,7 +674,17 @@ export default function EnhancedTable() {
                             onChange={e => setTanggalSampai(e.target.value)}
                         />
                     </div>
-                    <div className="pl-5 space-x-4">
+                    <div className="pl-5 space-x-4 flex-row flex">
+                        <Autocomplete
+                            disablePortal
+                            value={kategoriValue}
+                            onChange={(e, newVal) => setKategoriValue(newVal)}
+                            options={kategori}
+                            size="small"
+                            sx={{ width: 175 }}
+                            renderInput={(params) => <TextField {...params} label="Kategori" />}
+
+                        />
                         <button
                             key="terapkan"
                             className="no-underline text-white rounded-lg font-semibold  active:bg-gray-500 bg-black py-2 px-4 transition duration-75 ease-in-out"
@@ -585,6 +713,16 @@ export default function EnhancedTable() {
                         shrink: true,
                     }}
                 />
+            </div>
+
+            <div id="judul-laporan" className="justify-center text-3xl font-bold m-2 pt-2 hidden">
+
+            </div>
+            <div id="kategori-laporan" className="hidden justify-center text-3xl font-bold m-2 pt-2">
+
+            </div>
+            <div id="tanggal-laporan" className="hidden justify-center text-3xl font-bold m-2 pt-2">
+
             </div>
 
             <Box sx={{ width: '100%' }}>
@@ -641,10 +779,11 @@ export default function EnhancedTable() {
                                                     {row.noId}
                                                 </TableCell>
                                                 <TableCell align="left">{row.tanggalId}</TableCell>
-                                                <TableCell align="left">{row.referensiId}</TableCell>
+                                                <TableCell align="left" style={{ width: 10 }}>{row.referensiId}</TableCell>
                                                 <TableCell align="left">{row.keteranganId}</TableCell>
-                                                <TableCell align="right">{row.pemasukanId}</TableCell>
-                                                <TableCell align="right">{row.pengeluaranId}</TableCell>
+                                                <TableCell align="right">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(row.pemasukanId)}</TableCell>
+                                                <TableCell align="right">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(row.pengeluaranId)}</TableCell>
+                                                <TableCell align="right" style={{ width: 10 }}>{row.imgData.data === 404 ? null : <DescriptionIcon />}</TableCell>
                                             </TableRow>
                                         );
                                     })}
@@ -675,6 +814,26 @@ export default function EnhancedTable() {
                     label="Dense padding"
                 />
             </Box>
+            <div className="flex justify-end pb-2 space-x-5">
+                <TextField
+                    disabled
+                    id="filled-disabled"
+                    label="Pemasukan"
+                    value={new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(totalPemasukan)}
+                    InputLabelProps={{
+                        shrink: true,
+                    }}
+                />
+                <TextField
+                    disabled
+                    id="filled-disabled"
+                    label="Pengeluaran"
+                    value={new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(totalPengeluaran)}
+                    InputLabelProps={{
+                        shrink: true,
+                    }}
+                />
+            </div>
 
             {(selected.length === 0 || rows[selected[0] - 1].imgData.data === 404) ? (
                 <Backdrop

@@ -29,7 +29,7 @@
         "icons/icon.icns",
         "icons/icon.ico"
       ],
-      "identifier": "com.app.test",
+      "identifier": "com.keuangan.almuhajirin",
       "longDescription": "",
       "macOS": {
         "entitlements": null,
@@ -56,10 +56,10 @@
     "windows": [
       {
         "fullscreen": false,
-        "height": 600,
+        "height": 700,
         "resizable": true,
-        "title": "Tauri App",
-        "width": 1000
+        "title": "Laporan Keuangan Masjid Al-Muhajirin",
+        "width": 1450
       }
     ]
   }
